@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gpu-scheduler-check
+  namespace: default
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: gpu-scheduler-check
+  template:
+    metadata:
+      labels:
+        app: gpu-scheduler-check
+      annotations:
+        gpu-scheduling-map: |
+          0=node1:0,1
+          1=node2:2
+          2=node3:0,1,2
+          3=node4:3
+          4=node4:3
+    spec:
+      schedulerName: gpu-scheduler
+      containers:
+      - name: gpu-scheduler-check
+        image: gpu-scheduler-check:latest
+
