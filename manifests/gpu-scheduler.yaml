@@ -19,7 +19,9 @@ spec:
       labels:
         app: gpu-scheduler
     spec:
-      serviceAccountName: gpu-scheduler
+      # serviceAccountName: gpu-scheduler
+      serviceAccountName: k8sadmin
       containers:
       - name: gpu-scheduler
         image: gpu-scheduler:latest
+        imagePullPolicy: Never

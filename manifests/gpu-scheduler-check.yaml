@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: gpu-scheduler-check
   namespace: default
@@ -24,4 +24,4 @@ spec:
       containers:
       - name: gpu-scheduler-check
         image: gpu-scheduler-check:latest
-
+        imagePullPolicy: Never

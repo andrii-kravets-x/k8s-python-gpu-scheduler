@@ -42,7 +42,7 @@ def main():
             try:
                 res = scheduler(event['object'].metadata.name, random.choice(nodes_available()))
             except client.rest.ApiException as e:
-                print json.loads(e.body)['message']
+                print(json.loads(e.body)['message'])
                     
 if __name__ == '__main__':
     main()
