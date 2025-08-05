@@ -29,5 +29,13 @@ spec:
         - name: CUDA_VISIBLE_DEVICES
           valueFrom:
             fieldRef:
-              fieldPath: metadata.labels['cuda']
-              # fieldPath: metadata.namespace
+              fieldPath: metadata.annotations['cuda']
+        # - name: TEST1
+        #   valueFrom:
+        #     fieldRef:
+        #       fieldPath: metadata.labels
+        #  Unsupported value: "metadata.labels": supported values: "metadata.name", "metadata.namespace", "metadata.uid", "spec.nodeName", "spec.serviceAccountName", "status.hostIP", "status.hostIPs", "status.podIP", "status.podIPs"
+        - name: TEST2
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
