@@ -25,3 +25,9 @@ spec:
       - name: gpu-scheduler-check
         image: gpu-scheduler-check:latest
         imagePullPolicy: Never
+        env:
+        - name: CUDA_VISIBLE_DEVICES
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['cuda']
+              # fieldPath: metadata.namespace

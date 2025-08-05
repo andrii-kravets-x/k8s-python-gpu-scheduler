@@ -17,45 +17,30 @@ def parse_gpu_map(gpu_map_str):
     finally:
         return gpu_map
 
-def bind_pod_to_node(v1, pod, node_name):
+def bind_pod_to_node(core_v1_api, pod, node_name):
     try:
-        # binding = client.V1Binding(
-        #     metadata=client.V1ObjectMeta(name=pod.metadata.name, namespace=pod.metadata.namespace),
-        #     target=client.V1ObjectReference(kind="Node", name=node_name)
-        # )
-        # v1.create_namespaced_binding(namespace=pod.metadata.namespace, body=binding)
+        body = client.V1Binding(
+            metadata=client.V1ObjectMeta(name=pod.metadata.name, namespace=pod.metadata.namespace),
+            target=client.V1ObjectReference(kind="Node", name=node_name)
+        )
+        res = core_v1_api.create_namespaced_binding(namespace=pod.metadata.namespace, body=body)
         
-        body=client.V1Binding()
-        
-        target=client.V1ObjectReference()
-        target.kind="Node"
-        target.apiVersion="v1"
-        target.name=node_name
-        
-        meta=client.V1ObjectMeta()
-        meta.name=pod.metadata.name
-        
-        body.target=target
-        body.metadata=meta
-        
-        # https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/CoreV1Api.md#create_namespaced_binding
-        res = v1.create_namespaced_binding(namespace=pod.metadata.namespace, body=binding, target=target )
         logger.info(f"Bound pod {pod.metadata.name} to {node_name}")
         logger.info(f"Res: {res}")
     except ApiException as e:
         logger.error(f"Failed to bind pod {pod.metadata.name} to {node_name}: {e}")
 
-def patch_pod_env(v1, pod, cuda_devices):
+def patch_pod_env(core_v1_api, pod, cuda_devices):
     try:
         body = {
-            "spec": {
-                "containers": [{
-                    "name": pod.spec.containers[0].name,
-                    "env": [{"name": "CUDA_VISIBLE_DEVICES", "value": cuda_devices}]
-                }]
+            "metadata": {
+                "labels": {
+                    "cuda": cuda_devices
+                }
             }
         }
-        res = v1.patch_namespaced_pod(name=pod.metadata.name, namespace=pod.metadata.namespace, body=body)
+
+        res = core_v1_api.patch_namespaced_pod(name=pod.metadata.name, namespace=pod.metadata.namespace, body=body)
         logger.info(f"Patched pod {pod.metadata.name} with CUDA_VISIBLE_DEVICES={cuda_devices}")
     except ApiException as e:
         logger.error(f"Failed to patch pod {pod.metadata.name}: {e}")
@@ -67,28 +52,19 @@ def main():
         logger.error(f"Failed to load Kubernetes config: {e}")
         return
 
-    v1 = client.CoreV1Api()
-    # scheduler_name = os.getenv("SCHEDULER_NAME", "gpu-scheduler")
+    # apps_v1_api = client.AppsV1Api()
+    core_v1_api = client.CoreV1Api()
+
     w = watch.Watch()
     
-    logger.info(f"Scheduler running, client: {v1}, watch: {w}")
+    logger.info(f"Scheduler running, client: {core_v1_api}, watch: {w}")
 
-    for event in w.stream(v1.list_namespaced_pod, namespace="default", field_selector=f"spec.schedulerName=gpu-scheduler,status.phase=Pending"):
+    for event in w.stream(core_v1_api.list_namespaced_pod, namespace="default", field_selector=f"spec.schedulerName=gpu-scheduler,status.phase=Pending"):
         pod = event['object']
         try:
-            # if event['object'].status.phase == "Pending" and event['object'].spec.scheduler_name == scheduler_name:
-                # logger.info(f"Pod {pod.metadata.name} already scheduled, skipping")
-            
             if pod.spec.node_name:
-                # logger.info(f"Pod {pod.metadata.name} already scheduled, skipping")
+                logger.info(f"Pod {pod.metadata.name} already scheduled, skipping")
                 continue
-
-            # if not pod.status.phase == "Pending":
-            #     # logger.info(f"Pod {pod.metadata.name} status: {pod.status.phase} != Pending, skipping")
-            #     continue
-            # else:
-            #     logger.info(f"Pod {pod.metadata.name} status: {pod.status.phase}...")
-
 
             annotations = pod.metadata.annotations or {}
             gpu_map_str = annotations.get('gpu-scheduling-map', '')
@@ -110,18 +86,18 @@ def main():
             node_name = gpu_map[pod_idx]['node']
             cuda_devices = gpu_map[pod_idx]['cuda_devices']
             
-            # we will patch before binding, this way pods won't be recreated after bind
             try:
-                patch_pod_env(v1, pod, cuda_devices)
-            except Exception as e:
-                logger.error(f"Error patching pod {pod.metadata.name}: {e}")
-
-            try:
-                bind_pod_to_node(v1, pod, node_name)
+                bind_pod_to_node(core_v1_api, pod, node_name)
             except Exception as e:
                 # see https://github.com/kubernetes-client/python/issues/825#issuecomment-515676591
                 # Invalid value for `target`, must not be `None`
                 logger.error(f"Error binding pod {pod.metadata.name}: {e}")
+            
+            try:
+                patch_pod_env(core_v1_api, pod, cuda_devices)
+            except Exception as e:
+                logger.error(f"Error patching pod {pod.metadata.name}: {e}")
+
             
                 
         except Exception as e:

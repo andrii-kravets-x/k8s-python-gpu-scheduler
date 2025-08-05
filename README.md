@@ -145,6 +145,7 @@ PolicyRule:
 - https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
 - https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/CoreV1Api.md#create_namespaced_binding
 - https://github.com/kubernetes-client/python/issues/547#issuecomment-440528154
+- https://github.com/kubernetes/kubernetes/issues/19367
 
 #### Patching:
 - https://spacelift.io/blog/kubectl-patch-command
