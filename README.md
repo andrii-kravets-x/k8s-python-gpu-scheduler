@@ -1,11 +1,33 @@
 
 ## Custom k8s scheduler in python
 ### 1. Task explained in [task.md](./task.md)
-### 2. Resulting logs and screenshots shown [here](./output/README.md)
+### 2. Resulting logs shown [here](./output/README.md)
 
 ### 3. Steps
 1. **Spin up Ubuntu VM** in Proxmox (QEMU, cloud-init, etc). VM size **tested** with kind:  4CPU, 8 GB RAM, 30Gb.  
-    *Note: you can install docker/minikube locally on your laptop*
+    *Note: you can install everything locally on your laptop(not tested)*
+    
+    Info on software versions:
+    ```bash
+    > lsb_release -a
+    No LSB modules are available.
+    Distributor ID:	Ubuntu
+    Description:	Ubuntu 25.04
+    Release:	25.04
+    Codename:	plucky
+    
+    > docker --version 
+    Docker version 28.3.3, build 980b856
+    
+    > kind version 
+    kind v0.29.0 go1.24.2 linux/amd64
+
+    > kubectl version 
+    Client Version: v1.33.3
+    Kustomize Version: v5.6.0
+    Server Version: v1.33.1
+    ```
+    
 2. **Install Docker, Kind, kubectl**
     ```bash
     curl -fsSL https://get.docker.com -o get-docker.sh
@@ -73,7 +95,6 @@
     kubectl logs -f deployments/gpu-scheduler -n kube-system
     kubectl logs statefulsets/gpu-scheduler-check --all-pods=true -f --timestamps
     ```
-
 
 ### 4. Notes
 #### 4.1. IF you get "Failed to create inotify object: Too many open files"
