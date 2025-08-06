@@ -21,21 +21,24 @@ spec:
           4=node4:3
     spec:
       schedulerName: gpu-scheduler
+      volumes:
+        - name: podinfo
+          downwardAPI:
+            items:
+              - path: "cuda"
+                fieldRef:
+                  fieldPath: metadata.annotations['cuda']
+      terminationGracePeriodSeconds: 1
       containers:
       - name: gpu-scheduler-check
         image: gpu-scheduler-check:latest
         imagePullPolicy: Never
-        env:
-        - name: CUDA_VISIBLE_DEVICES
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.annotations['cuda']
-        # - name: TEST1
-        #   valueFrom:
-        #     fieldRef:
-        #       fieldPath: metadata.labels
-        #  Unsupported value: "metadata.labels": supported values: "metadata.name", "metadata.namespace", "metadata.uid", "spec.nodeName", "spec.serviceAccountName", "status.hostIP", "status.hostIPs", "status.podIP", "status.podIPs"
-        - name: TEST2
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            export $(cat /etc/podinfo/cuda)
+            exec python /app/main.py
+        volumeMounts:
+        - name: podinfo
+          mountPath: /etc/podinfo
+          readOnly: true

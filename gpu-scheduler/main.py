@@ -46,7 +46,7 @@ def patch_pod_env(core_v1_api, pod, cuda_devices):
         body = {
             "metadata": {
                 "annotations": {
-                    "cuda": cuda_devices
+                    "cuda": "CUDA_VISIBLE_DEVICES=" + cuda_devices
                 }
             }
         }
@@ -101,8 +101,7 @@ def main():
         bind_pod_to_node(core_v1_api, pod, node_name)
 
         try:
-            # patch_pod_env(core_v1_api, pod, cuda_devices)
-            pass
+            patch_pod_env(core_v1_api, pod, cuda_devices)
         except Exception as e:
             logger.error(f"Error patching pod {pod.metadata.name}: {e}")
 
