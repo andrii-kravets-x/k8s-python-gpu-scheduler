@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import re
 from kubernetes import client, config, watch
 from kubernetes.client.rest import ApiException
 from loguru import logger
@@ -32,13 +33,12 @@ def bind_pod_to_node(core_v1_api, pod, node_name):
         if str(e) == "Invalid value for `target`, must not be `None`":
             # see https://github.com/kubernetes-client/python/issues/825#issuecomment-515676591
             # pass  # Suppress this specific error
-            
+
             pod_result = core_v1_api.read_namespaced_pod(name=pod.metadata.name, namespace=pod.metadata.namespace)
             logger.info(f"Bound pod {pod.metadata.name} to node: {pod_result.spec.node_name}")
         else:
             logger.error(f"Unexpected error while binding {pod.metadata.name}: {e}")
             raise  # Re-raise 
-
 
 def patch_pod_env(core_v1_api, pod, cuda_devices):
     try:
@@ -87,7 +87,9 @@ def main():
                 continue
 
             # logger.debug(f"pod: {pod}")
-            pod_idx = int(pod.metadata.name.split('-')[-1])
+            # pod_idx = int(pod.metadata.name.split('-')[-1])
+            match = re.search(r'-(\d+)$', pod.metadata.name)
+            pod_idx = int(match.group(1)) if match else 0 # set pod id to 0 as a fallback
             if pod_idx not in gpu_map:
                 logger.warning(f"No GPU mapping for pod index {pod_idx} in pod {pod.metadata.name}")
                 continue

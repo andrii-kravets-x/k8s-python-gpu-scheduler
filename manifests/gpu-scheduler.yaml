@@ -24,6 +24,12 @@ spec:
       # kubectl create serviceaccount k8sadmin -n kube-system; kubectl create clusterrolebinding k8sadmin-binding --clusterrole=cluster-admin --serviceaccount=kube-system:k8sadmin
       serviceAccountName: k8sadmin
       terminationGracePeriodSeconds: 1
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+      tolerations:
+      - key: "node-role.kubernetes.io/control-plane"
+        effect: "NoSchedule"
+        operator: "Exists"
       containers:
       - name: gpu-scheduler
         image: gpu-scheduler:latest
